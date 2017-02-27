@@ -1,0 +1,1 @@
+g++ main.cpp ping.cpp -o build/p
