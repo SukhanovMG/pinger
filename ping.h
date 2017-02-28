@@ -3,7 +3,16 @@
 
 #include <cstdint> // fixed integers
 #include <cstddef> // size_t
-#include <sys/socket.h> // socket
+
+class Socket
+{
+public:
+	Socket(int domain, int type, int protocol);
+	~Socket();
+	int get() const { return m_socket_fd; }
+private:
+	int m_socket_fd;
+};
 
 class Pinger
 {
@@ -12,17 +21,10 @@ public:
 	Pinger();
 	~Pinger();
 private:
-	uint16_t checksum(uint16_t *buf, size_t len);
-	struct addrinfo * host_serv(const char *host, const char *serv, int family, int socktype);
+	Socket m_sock;
 
-	int m_socketfd;
-	struct sock_addr *dest_addr;
-	socklen_t dest_addr_len;
-
-	char m_sendbuf[kBufSize];
 	int m_transmitted;
 	int m_id;
-	int m_data_len;
 };
 
 #endif
