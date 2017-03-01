@@ -67,9 +67,6 @@ Pinger::Pinger() :
 	m_transmitted(0),
 	m_id(getpid())
 {
-	// drop root priveleges if it is possible
-	setuid(getuid());
-
 	char sendbuf[kBufSize] = {0};
 
 	// fill icmp message
