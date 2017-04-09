@@ -78,12 +78,11 @@ Pinger::Pinger() :
 	icmp->icmp_seq = m_transmitted++;
 	icmp->icmp_id = m_id;
 
-	int data_len = 5;
-	icmp->icmp_data[0] = 0xDE;
-	icmp->icmp_data[1] = 0xAD;
-	icmp->icmp_data[2] = 0xBE;
-	icmp->icmp_data[3] = 0xAF;
-	icmp->icmp_data[4] = 0xAA;
+	char payload[] = { '\xDE', '\xAD', '\xBE', '\xAF', '\xAA' };
+	int data_len = sizeof(payload);
+
+	for (size_t i = 0; i < data_len; i++)
+		icmp->icmp_data[i] = payload[i];
 
 	icmp->icmp_cksum = 0;
 	icmp->icmp_cksum = checksum((uint16_t*)icmp, 8 + data_len);
@@ -92,7 +91,27 @@ Pinger::Pinger() :
 
 	sendto(m_sock.get(), buf, 8 + data_len, 0, ai->ai_addr, ai->ai_addrlen);
 
-	recvfrom(m_sock.get(), buf, sizeof(buf), 0, NULL, NULL);
+	int recv_size = recvfrom(m_sock.get(), buf, sizeof(buf), 0, NULL, NULL);
+
+	struct ip *ip = (struct ip*) buf;
+	int ip_header_len = ip->ip_hl << 2;
+	int icmp_len = recv_size - ip_header_len;
+	icmp = (struct icmp*)(buf + ip_header_len);
+
+	if (icmp_len < 8 + data_len)
+		throw runtime_error("ICMP packet is too short.");
+
+	if (icmp->icmp_type != ICMP_ECHOREPLY)
+		throw runtime_error("Response is not ECHO REPLY.");
+
+	if (icmp->icmp_id != m_id)
+		throw runtime_error("Wrong id in reply.");
+
+	for (size_t i = 0; i < data_len; i++)
+	{
+		if ((char)icmp->icmp_data[i] != (char)payload[i])
+			throw runtime_error("Data in reply is wrong.");
+	}
 }
 
 Pinger::~Pinger()
