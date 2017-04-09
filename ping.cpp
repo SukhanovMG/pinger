@@ -11,6 +11,8 @@
 
 using namespace std;
 
+typedef unique_ptr<struct addrinfo, void(*)(struct addrinfo*)> up_addrinfo;
+
 Socket::Socket(int domain, int type, int protocol) :
 	m_socket_fd(socket(domain, type, protocol))
 {
@@ -67,10 +69,10 @@ Pinger::Pinger() :
 	m_transmitted(0),
 	m_id(getpid())
 {
-	char sendbuf[kBufSize] = {0};
+	char buf[kBufSize] = {0};
 
 	// fill icmp message
-	struct icmp* icmp = (struct icmp *)sendbuf;
+	struct icmp* icmp = (struct icmp *)buf;
 	icmp->icmp_type = ICMP_ECHO;
 	icmp->icmp_code = 0;
 	icmp->icmp_seq = m_transmitted++;
@@ -86,9 +88,11 @@ Pinger::Pinger() :
 	icmp->icmp_cksum = 0;
 	icmp->icmp_cksum = checksum((uint16_t*)icmp, 8 + data_len);
 
-	unique_ptr<struct addrinfo, void(*)(struct addrinfo*)> ai(host_serv("8.8.8.8", NULL, AF_INET, 0), &freeaddrinfo);
+	up_addrinfo ai(host_serv("8.8.8.8", NULL, AF_INET, 0), &freeaddrinfo);
 
-	sendto(m_sock.get(), sendbuf, 8 + data_len, 0, ai->ai_addr, ai->ai_addrlen);
+	sendto(m_sock.get(), buf, 8 + data_len, 0, ai->ai_addr, ai->ai_addrlen);
+
+	recvfrom(m_sock.get(), buf, sizeof(buf), 0, NULL, NULL);
 }
 
 Pinger::~Pinger()
