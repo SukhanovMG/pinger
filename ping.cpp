@@ -11,7 +11,15 @@
 
 using namespace std;
 
-typedef unique_ptr<struct addrinfo, void(*)(struct addrinfo*)> up_addrinfo;
+struct struct_addrinfo_deleter
+{
+	void operator () (struct addrinfo* ai)
+	{
+		freeaddrinfo(ai);
+	}
+};
+
+typedef unique_ptr<struct addrinfo, struct_addrinfo_deleter> up_addrinfo;
 
 Socket::Socket(int domain, int type, int protocol) :
 	m_socket_fd(socket(domain, type, protocol))
@@ -48,20 +56,17 @@ uint16_t checksum(uint16_t *buf, size_t len)
 	return ~sum; // return complement
 }
 
-struct addrinfo *host_serv(const char *host, const char *serv, int family, int socktype)
+up_addrinfo host_serv(const char *host, const char *serv, int family, int socktype)
 {
-	int n;
 	struct addrinfo hints = { 0 };
-	struct addrinfo *res = NULL;
+	struct addrinfo *ai = nullptr;
 
 	hints.ai_flags    = AI_CANONNAME;	/* always return canonical name */
 	hints.ai_family   = family;			/* AF_UNSPEC, AF_INET, AF_INET6, etc. */
 	hints.ai_socktype = socktype;		/* 0, SOCK_STREAM, SOCK_DGRAM, etc. */
 
-	if ( (n = getaddrinfo(host, serv, &hints, &res)) != 0)
-		return NULL ;
-
-	return res ;	/* return pointer to first on linked list */
+	getaddrinfo(host, serv, &hints, &ai);
+	return up_addrinfo(res);	/* return pointer to first on linked list */
 }
 
 Pinger::Pinger() :
@@ -87,7 +92,9 @@ Pinger::Pinger() :
 	icmp->icmp_cksum = 0;
 	icmp->icmp_cksum = checksum((uint16_t*)icmp, 8 + data_len);
 
-	up_addrinfo ai(host_serv("8.8.8.8", NULL, AF_INET, 0), &freeaddrinfo);
+	up_addrinfo ai = host_serv("8.8.8.8", NULL, AF_INET, 0);
+	if (nullptr == ai)
+		throw runtime_error("Bad ping target");
 
 	sendto(m_sock.get(), buf, 8 + data_len, 0, ai->ai_addr, ai->ai_addrlen);
 
