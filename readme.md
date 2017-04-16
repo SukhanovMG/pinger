@@ -1,0 +1,1 @@
+Запуск: sudo capsh --caps="cap_net_raw+pe" -- -c "gdb -tui --args ./bin/pinger"
