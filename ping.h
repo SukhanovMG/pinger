@@ -3,6 +3,7 @@
 
 #include <cstdint> // fixed integers
 #include <cstddef> // size_t
+#include <string>
 
 class Socket
 {
@@ -18,10 +19,15 @@ class Pinger
 {
 public:
 	enum defaults { kBufSize = 1500 };
-	Pinger();
+	Pinger(const std::string& address);
 	~Pinger();
+
+	void set_address(const std::string& address) { m_address = address; }
+
+	void ping();
 private:
 	Socket m_sock;
+	std::string m_address;
 
 	int m_transmitted;
 	int m_id;
