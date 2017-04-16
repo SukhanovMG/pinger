@@ -22,6 +22,8 @@ public:
 	Pinger(const std::string& address);
 	~Pinger();
 
+	void set_address(const std::string& address) { m_address = address; }
+
 	void ping();
 private:
 	Socket m_sock;
