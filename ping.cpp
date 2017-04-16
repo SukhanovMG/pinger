@@ -69,8 +69,9 @@ up_addrinfo host_serv(const char *host, const char *serv, int family, int sockty
 	return up_addrinfo(ai);	/* return pointer to first on linked list */
 }
 
-Pinger::Pinger() :
+Pinger::Pinger(const std::string& address) :
 	m_sock(AF_INET, SOCK_RAW, IPPROTO_ICMP),  // create raw socket
+	m_address(address),
 	m_transmitted(0),
 	m_id(getpid())
 {
@@ -101,7 +102,7 @@ void Pinger::ping()
 	icmp->icmp_cksum = 0;
 	icmp->icmp_cksum = checksum((uint16_t*)icmp, 8 + data_len);
 
-	up_addrinfo ai = host_serv("8.8.8.8", NULL, AF_INET, 0);
+	up_addrinfo ai = host_serv(m_address.c_str(), NULL, AF_INET, 0);
 	if (nullptr == ai)
 		throw runtime_error("Bad ping target");
 

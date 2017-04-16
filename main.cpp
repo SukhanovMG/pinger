@@ -8,7 +8,7 @@ using namespace std;
 int main()
 {
 	try{
-		Pinger p;
+		Pinger p("8.8.8.8");
 		p.ping();
 	}
 	catch(exception& e)
