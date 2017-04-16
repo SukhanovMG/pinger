@@ -20,6 +20,8 @@ public:
 	enum defaults { kBufSize = 1500 };
 	Pinger();
 	~Pinger();
+
+	void ping();
 private:
 	Socket m_sock;
 

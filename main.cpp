@@ -9,6 +9,7 @@ int main()
 {
 	try{
 		Pinger p;
+		p.ping();
 	}
 	catch(exception& e)
 	{

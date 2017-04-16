@@ -66,13 +66,22 @@ up_addrinfo host_serv(const char *host, const char *serv, int family, int sockty
 	hints.ai_socktype = socktype;		/* 0, SOCK_STREAM, SOCK_DGRAM, etc. */
 
 	getaddrinfo(host, serv, &hints, &ai);
-	return up_addrinfo(res);	/* return pointer to first on linked list */
+	return up_addrinfo(ai);	/* return pointer to first on linked list */
 }
 
 Pinger::Pinger() :
 	m_sock(AF_INET, SOCK_RAW, IPPROTO_ICMP),  // create raw socket
 	m_transmitted(0),
 	m_id(getpid())
+{
+}
+
+Pinger::~Pinger()
+{
+}
+
+
+void Pinger::ping()
 {
 	char buf[kBufSize] = {0};
 
@@ -119,8 +128,4 @@ Pinger::Pinger() :
 		if ((char)icmp->icmp_data[i] != (char)payload[i])
 			throw runtime_error("Data in reply is wrong.");
 	}
-}
-
-Pinger::~Pinger()
-{
 }
