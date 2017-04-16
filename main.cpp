@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<string> addresses = { "ya.ru", "google.com", "8.8.8.8" };
+vector<string> addresses = { /*"192.168.0.222",*/ "ya.ru", "google.com", "8.8.8.8" };
 unsigned n_ping = 5;
 
 void ping_em_all()
@@ -15,6 +15,7 @@ void ping_em_all()
 
 	for (const auto& addr : addresses)
 	{
+		cout << addr << endl;
 		p.set_address(addr);
 		for (size_t i = 0; i < n_ping; i++)
 		{

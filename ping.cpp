@@ -108,10 +108,11 @@ void Pinger::ping()
 	if (nullptr == ai)
 		throw runtime_error("Bad ping target");
 
-	sendto(m_sock.get(), buf, size_need_to_send, 0, ai->ai_addr, ai->ai_addrlen);
+	int send_size = sendto(m_sock.get(), buf, size_need_to_send, 0, ai->ai_addr, ai->ai_addrlen);
+	if (send_size < size_need_to_send)
+		throw runtime_error("Not enough data sent");
 
 	int recv_size = recvfrom(m_sock.get(), buf, size_need_to_receive, 0, NULL, NULL);
-
 	if (recv_size < size_need_to_receive)
 		throw runtime_error("Not enough data received");
 
