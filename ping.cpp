@@ -95,28 +95,29 @@ void Pinger::ping()
 
 	char payload[] = { '\xDE', '\xAD', '\xBE', '\xAF', '\xAA' };
 	int data_len = sizeof(payload);
+	int size_need_to_send = ICMP_MINLEN + data_len;
+	int size_need_to_receive = sizeof(struct ip) + ICMP_MINLEN + data_len;
 
 	for (size_t i = 0; i < data_len; i++)
 		icmp->icmp_data[i] = payload[i];
 
 	icmp->icmp_cksum = 0;
-	icmp->icmp_cksum = checksum((uint16_t*)icmp, 8 + data_len);
+	icmp->icmp_cksum = checksum((uint16_t*)icmp, size_need_to_send);
 
 	up_addrinfo ai = host_serv(m_address.c_str(), NULL, AF_INET, 0);
 	if (nullptr == ai)
 		throw runtime_error("Bad ping target");
 
-	sendto(m_sock.get(), buf, 8 + data_len, 0, ai->ai_addr, ai->ai_addrlen);
+	sendto(m_sock.get(), buf, size_need_to_send, 0, ai->ai_addr, ai->ai_addrlen);
 
-	int recv_size = recvfrom(m_sock.get(), buf, sizeof(buf), 0, NULL, NULL);
+	int recv_size = recvfrom(m_sock.get(), buf, size_need_to_receive, 0, NULL, NULL);
+
+	if (recv_size < size_need_to_receive)
+		throw runtime_error("Not enough data received");
 
 	struct ip *ip = (struct ip*) buf;
 	int ip_header_len = ip->ip_hl << 2;
-	int icmp_len = recv_size - ip_header_len;
 	icmp = (struct icmp*)(buf + ip_header_len);
-
-	if (icmp_len < 8 + data_len)
-		throw runtime_error("ICMP packet is too short.");
 
 	if (icmp->icmp_type != ICMP_ECHOREPLY)
 		throw runtime_error("Response is not ECHO REPLY.");
