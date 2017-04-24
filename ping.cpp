@@ -1,5 +1,7 @@
 #include "ping.h"
 
+#include <iostream>
+
 #include <memory>
 #include <netdb.h> // for getaddrinfo, etc..
 #include <netinet/in.h> // IPPROTO_ICMP
@@ -21,11 +23,22 @@ struct struct_addrinfo_deleter
 
 typedef unique_ptr<struct addrinfo, struct_addrinfo_deleter> up_addrinfo;
 
-Socket::Socket(int domain, int type, int protocol) :
+Socket::Socket(int domain, int type, int protocol, unsigned snd_timeout, unsigned rcv_timeout) :
     m_socket_fd(socket(domain, type, protocol))
 {
     if (m_socket_fd < 0)
         throw runtime_error("Failed to create socket.");
+
+    struct timeval to;
+    to.tv_sec = snd_timeout;
+    to.tv_usec = 0;
+    if (setsockopt(m_socket_fd, SOL_SOCKET, SO_SNDTIMEO, (void*)&to, sizeof(to)) != 0)
+        throw runtime_error("Failed to set send timeout.");
+
+    to.tv_sec = rcv_timeout;
+    to.tv_usec = 0;
+    if (setsockopt(m_socket_fd, SOL_SOCKET, SO_RCVTIMEO, (void*)&to, sizeof(to)) != 0)
+        throw runtime_error("Failed to set receive timeout.");
 }
 
 Socket::~Socket()
@@ -69,8 +82,8 @@ up_addrinfo host_serv(const char *host, const char *serv, int family, int sockty
     return up_addrinfo(ai); /* return pointer to first on linked list */
 }
 
-Pinger::Pinger(const std::string& address) :
-    m_sock(AF_INET, SOCK_RAW, IPPROTO_ICMP),  // create raw socket
+Pinger::Pinger(const std::string& address, unsigned snd_timeout, unsigned rcv_timeout) :
+    m_sock(AF_INET, SOCK_RAW, IPPROTO_ICMP, snd_timeout, rcv_timeout),  // create raw socket
     m_address(address),
     m_transmitted(0),
     m_id(getpid())

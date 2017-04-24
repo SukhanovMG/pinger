@@ -8,7 +8,7 @@
 class Socket
 {
 public:
-    Socket(int domain, int type, int protocol);
+    Socket(int domain, int type, int protocol, unsigned snd_timeout, unsigned rcv_timeout);
     ~Socket();
     int get() const { return m_socket_fd; }
 private:
@@ -19,7 +19,7 @@ class Pinger
 {
 public:
     enum defaults { kBufSize = 1500 };
-    Pinger(const std::string& address);
+    Pinger(const std::string& address, unsigned snd_timeout, unsigned rcv_timeout);
     ~Pinger();
 
     void set_address(const std::string& address) { m_address = address; }
