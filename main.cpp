@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<string> addresses = { /*"192.168.0.222",*/ "ya.ru", "google.com", "8.8.8.8", "192.168.24.222" };
+vector<string> addresses = { "192.168.24.27", "8.8.8.8", "172.16.2.1" };
 unsigned n_ping = 5;
 
 void ping_em_all()
